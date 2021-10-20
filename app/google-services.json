@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "392472249713",
+    "firebase_url": "https://where2-efffd-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "where2-efffd",
+    "storage_bucket": "where2-efffd.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:392472249713:android:03410fa29c21e6fa1c62d0",
+        "android_client_info": {
+          "package_name": "com.example.where2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "392472249713-fidgl1fqndooj0lbm9dejpou3nmcgmqf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-Cjsr-ayUmkR7OroDX30Xb5_6hcL-oLI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "392472249713-fidgl1fqndooj0lbm9dejpou3nmcgmqf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

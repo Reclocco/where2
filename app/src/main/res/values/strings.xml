@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">where2</string>
+    <string name="action_settings">Settings</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">First Fragment</string>
+    <string name="second_fragment_label">Second Fragment</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+
+    <string name="hello_first_fragment">Hello first fragment</string>
+    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+    <string name="signup">  Signup!</string>
+    <string name="no_account_yet">No account yet?</string>
+    <string name="password">password</string>
+    <string name="password_capital">Password</string>
+    <string name="email_address">Email address:</string>
+    <string name="email_example">email@abc.com</string>
+    <string name="login_title_text">Login to your explorer account!</string>
+    <string name="header_via_existing_acc">…or use your existing account!</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="login">Login</string>
+</resources>
