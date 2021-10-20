@@ -15,7 +15,7 @@
     <string name="password_capital">Password</string>
     <string name="email_address">Email address:</string>
     <string name="email_example">email@abc.com</string>
-    <string name="login_title_text">Login to your explorer account!</string>
+    <string name="login_title_text">Login to your where2 account!</string>
     <string name="header_via_existing_acc">…or use your existing account!</string>
     <string name="sign_in_with_google">Sign in with Google</string>
     <string name="login">Login</string>

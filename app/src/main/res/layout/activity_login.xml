@@ -42,7 +42,7 @@
             android:id="@+id/editTextTextEmailAddress"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:autofillHints=""
+            android:autofillHints="emailAddress"
             android:ems="10"
             android:hint="@string/email_example"
             android:inputType="textEmailAddress"
@@ -61,13 +61,14 @@
             android:text="@string/password_capital" />
 
         <EditText
-            android:id="@+id/editTextNumberPassword"
+            android:id="@+id/editTextPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="@string/password"
             android:inputType="textPassword"
-            android:minHeight="48dp" />
+            android:minHeight="48dp"
+            android:autofillHints="password" />
 
         <Button
             android:id="@+id/loginButton"
@@ -97,6 +98,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:paddingLeft="8dp"
                 android:text="@string/signup"
                 android:textStyle="bold" />
 
@@ -129,19 +131,23 @@
             android:id="@+id/textView7"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:paddingTop="48dp"
             android:text="@string/header_via_existing_acc"
             android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
         <Button
             android:id="@+id/google_login_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:background="@drawable/rounded_corners"
-            android:drawableStart="@drawable/google_icon"
+            android:drawableEnd="@drawable/google_icon"
             android:drawablePadding="8dp"
             android:padding="8dp"
+            android:paddingTop="16dp"
             android:text="@string/sign_in_with_google"
             android:textAllCaps="false"
-            android:textColor="@color/GoogleTextColor"
+            android:textColor="@color/white"
             android:textStyle="bold" />
 
     </LinearLayout>
