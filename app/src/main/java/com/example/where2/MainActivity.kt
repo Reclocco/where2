@@ -1,5 +1,6 @@
 package com.example.where2
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import com.google.android.material.snackbar.Snackbar
@@ -68,8 +69,7 @@ class MainActivity : AppCompatActivity() {
         AuthUI.IdpConfig.EmailBuilder().build(),
         AuthUI.IdpConfig.PhoneBuilder().build(),
         AuthUI.IdpConfig.GoogleBuilder().build(),
-//        AuthUI.IdpConfig.FacebookBuilder().build(),
-        AuthUI.IdpConfig.TwitterBuilder().build()
+        AuthUI.IdpConfig.TwitterBuilder().build(),
     )
 
     // Create and launch sign-in intent
@@ -88,12 +88,12 @@ class MainActivity : AppCompatActivity() {
             val user = FirebaseAuth.getInstance().currentUser
             Log.d("BIP BOP", "AUTH SUCCESSFUL")
             Toast.makeText(this, "LOGIN SUCCESSFUL", Toast.LENGTH_SHORT).show()
-            // ...
+
+            val intent = Intent(this, WelcomeActivity::class.java)
+            startActivity(intent)
         } else {
-            // Sign in failed. If response is null the user canceled the
-            // sign-in flow using the back button. Otherwise check
-            // response.getError().getErrorCode() and handle the error.
-            // ...
+            Log.d("DEAD", "AUTH SUCCESSFUL")
+            Toast.makeText(this, "LOGIN UNSUCCESSFUL", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -111,7 +111,9 @@ class MainActivity : AppCompatActivity() {
         // Check if user is signed in (non-null) and update UI accordingly.
         val currentUser = auth.currentUser
         if(currentUser != null){
-            reload();
+            Log.d("USER", "user logged in")
+            val intent = Intent(this, WelcomeActivity::class.java)
+            startActivity(intent)
         }
     }
 
@@ -182,26 +184,4 @@ class MainActivity : AppCompatActivity() {
             return
         }
     }
-
-//    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-//        // Inflate the menu; this adds items to the action bar if it is present.
-//        menuInflater.inflate(R.menu.menu_main, menu)
-//        return true
-//    }
-//
-//    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-//        // Handle action bar item clicks here. The action bar will
-//        // automatically handle clicks on the Home/Up button, so long
-//        // as you specify a parent activity in AndroidManifest.xml.
-//        return when (item.itemId) {
-//            R.id.action_settings -> true
-//            else -> super.onOptionsItemSelected(item)
-//        }
-//    }
-//
-//    override fun onSupportNavigateUp(): Boolean {
-//        val navController = findNavController(R.id.nav_host_fragment_content_main)
-//        return navController.navigateUp(appBarConfiguration)
-//                || super.onSupportNavigateUp()
-//    }
 }
