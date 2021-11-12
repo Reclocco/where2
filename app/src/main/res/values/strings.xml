@@ -21,4 +21,21 @@
     <string name="login">Login</string>
     <string name="safe_login">Safe Login</string>
     <string name="title_activity_welcome">WelcomeActivity</string>
+
+    <string name="my_google_api_key">AIzaSyDJwo248qnVnalWoobX8rPkxX0C-MGht_4</string>
+
+    <string-array name="hours_array">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+    </string-array>
 </resources>

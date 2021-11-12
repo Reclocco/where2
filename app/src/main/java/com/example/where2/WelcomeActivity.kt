@@ -34,6 +34,10 @@ class WelcomeActivity : AppCompatActivity()  {
         binding.signOut.setOnClickListener{
             logout()
         }
+
+        binding.createNew.setOnClickListener {
+            openPlanActivity()
+        }
     }
 
     private fun openMaps() {
@@ -48,6 +52,11 @@ class WelcomeActivity : AppCompatActivity()  {
                 startActivity(Intent(this, MainActivity::class.java))
                 finish()
             }
+    }
+
+    private fun openPlanActivity(){
+        val intent = Intent(this, PlanActivity::class.java)
+        startActivity(intent)
     }
 
 }
