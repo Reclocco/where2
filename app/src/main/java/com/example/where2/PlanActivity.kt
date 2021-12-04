@@ -1,25 +1,36 @@
 package com.example.where2
 
 import android.content.ContentValues.TAG
-import android.location.Location
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.ArrayAdapter
+import android.widget.Button
 import android.widget.Spinner
-import androidx.fragment.app.Fragment
-import com.google.android.datatransport.runtime.backends.BackendResponse
 import com.google.android.gms.common.api.Status
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.json.JSONObject
+import okhttp3.*
+import java.io.IOException
 import java.util.*
+import okhttp3.OkHttpClient
+
+
+
 
 class PlanActivity : AppCompatActivity() {
+    lateinit var startLatLng: LatLng
+    lateinit var finishLatLng: LatLng
+
+    private val client = OkHttpClient()
+
+    lateinit var startingPlace: Place
+    lateinit var finishingPlace: Place
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_plan)
@@ -34,7 +45,7 @@ class PlanActivity : AppCompatActivity() {
                     as AutocompleteSupportFragment
 
         // Specify the types of place data to return.
-        autocompleteFragment.setPlaceFields(listOf(Place.Field.ID, Place.Field.NAME))
+        autocompleteFragment.setPlaceFields(listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG))
 
         // Set up a PlaceSelectionListener to handle the response.
         autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
@@ -45,6 +56,9 @@ class PlanActivity : AppCompatActivity() {
             override fun onPlaceSelected(place: Place) {
                 // TODO: Get info about the selected place.
                 Log.i(TAG, "Place: ${place.name}, ${place.id}")
+                startLatLng = place.latLng
+
+//                startingPlace
             }
         })
 
@@ -54,7 +68,7 @@ class PlanActivity : AppCompatActivity() {
                     as AutocompleteSupportFragment
 
         // Specify the types of place data to return.
-        autocompleteFragment2.setPlaceFields(listOf(Place.Field.ID, Place.Field.NAME))
+        autocompleteFragment2.setPlaceFields(listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG))
 
         // Set up a PlaceSelectionListener to handle the response.
         autocompleteFragment2.setOnPlaceSelectedListener(object : PlaceSelectionListener {
@@ -65,6 +79,9 @@ class PlanActivity : AppCompatActivity() {
             override fun onPlaceSelected(place: Place) {
                 // TODO: Get info about the selected place.
                 Log.i(TAG, "Place: ${place.name}, ${place.id}")
+                finishLatLng = place.latLng
+                Log.i(TAG, "Place: ${makeApiCall(place)}")
+
             }
         })
 
@@ -81,18 +98,47 @@ class PlanActivity : AppCompatActivity() {
             // Apply the adapter to the spinner
             spinner.adapter = adapter
         }
+
+        val showRoute: Button = findViewById(R.id.letsGo)
+        showRoute.setOnClickListener {
+            makeRoute()
+        }
     }
 
-    fun makeApiCall(location: Location){
-        //TODO ADD PARAMETRIZED URL FOR PLACES AND MAKE IT WORK. take care of yourself.
-        val request = Request.Builder().url("https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.latitude},${location.longitude}&radius=1500&type=restaurant&key=YOUR_API_KEY")
+    fun makeApiCall(place: Place) {
+        val request = Request.Builder()
+            .url("https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=" +
+                    "${place.latLng.latitude},${place.latLng.longitude}&" +
+                    "radius=1500&" +
+                    "type=restaurant&" +
+                    "key=AIzaSyDJwo248qnVnalWoobX8rPkxX0C-MGht_4")
             .build()
 
-        val response = OkHttpClient().newCall(request).execute().body?.string()
-        val jsonObject = JSONObject(response) // This will make the json below as an object for you
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                e.printStackTrace()
+            }
 
-        // You can access all the attributes , nested ones using JSONArray and JSONObject here
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!response.isSuccessful) throw IOException("Unexpected code $response")
 
+                    for ((name, value) in response.headers) {
+                        println("$name: $value")
+                    }
 
+                    Log.i(TAG, response.body!!.string())
+                }
+            }
+        })
+    }
+
+    private fun makeRoute(){
+        val intent = Intent(this, RouteActivity::class.java)
+        val args = Bundle()
+        args.putParcelable("from_position", startLatLng)
+        args.putParcelable("to_position", finishLatLng)
+        intent.putExtra("bundle", args)
+        startActivity(intent)
     }
 }
