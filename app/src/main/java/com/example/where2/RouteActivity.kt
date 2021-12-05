@@ -31,6 +31,7 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.gson.JsonObject
 import okhttp3.*
 import org.json.JSONArray
+import org.json.JSONObject
 import java.io.IOException
 
 class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -41,6 +42,7 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var fromPosition: LatLng
     private lateinit var toPosition: LatLng
     private lateinit var centerLatLng: LatLng
+    private lateinit var responseBody: String
 
     private val client = OkHttpClient()
 
@@ -77,16 +79,15 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
 
             override fun onResponse(call: Call, response: Response) {
                 response.use {
-                    if (!response.isSuccessful) throw IOException("Unexpected code $response")
+                    if (!it.isSuccessful) throw IOException("Unexpected code $it")
 
-                    for ((name, value) in response.headers) {
-                        println("$name: $value")
+                    for ((name, value) in it.headers) {
+                        Log.i("HEADERS: ", "$name: $value")
                     }
 
-                    Log.i(ContentValues.TAG, response.body!!.string())
-
-                    val jsonResponse = JSONArray(response.body!!.string())
-                    Log.i(ContentValues.TAG, jsonResponse.getString(0))
+                    val responseString = it.body!!.string()
+                    val jsonObject = JSONObject(responseString)
+                    Log.i(ContentValues.TAG, responseString)
                 }
             }
         })
