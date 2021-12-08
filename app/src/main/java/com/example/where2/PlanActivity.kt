@@ -18,8 +18,7 @@ import okhttp3.*
 import java.io.IOException
 import java.util.*
 import okhttp3.OkHttpClient
-
-
+import kotlin.collections.ArrayList
 
 
 class PlanActivity : AppCompatActivity() {

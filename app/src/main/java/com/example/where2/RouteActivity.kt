@@ -19,7 +19,6 @@ import android.content.ContentValues
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import com.example.where2.R
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -27,12 +26,14 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.libraries.places.api.model.Place
-import com.google.gson.JsonObject
 import okhttp3.*
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
+import okhttp3.OkHttpClient
+
+
+
 
 class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -42,7 +43,6 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var fromPosition: LatLng
     private lateinit var toPosition: LatLng
     private lateinit var centerLatLng: LatLng
-    private lateinit var responseBody: String
 
     private val client = OkHttpClient()
 
@@ -60,10 +60,44 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
         centerLatLng = LatLng((fromPosition.latitude+toPosition.latitude) /2 % 90,
             (fromPosition.longitude+toPosition.longitude) / 2 % 180)
 
-        makeApiCall(centerLatLng)
+        getPlaces(centerLatLng)
     }
 
-    private fun makeApiCall(place: LatLng) {
+    fun makeLogs(placeList: ArrayList<String>) {
+        Log.i("WILL IT EVER WORK?? ", placeList.toString())
+    }
+
+    private fun getDirections(placeList: ArrayList<String>) {
+        val request = Request.Builder()
+            .url("https://maps.googleapis.com/maps/api/directions/json?" +
+                    "origin=Chicago%2C%20IL&" +
+                    "destination=Los%20Angeles%2C%20CA&" +
+                    "waypoints=Joplin%2C%20MO%7COklahoma%20City%2C%20OK&" +
+                    "key=AIzaSyDJwo248qnVnalWoobX8rPkxX0C-MGht_4")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                e.printStackTrace()
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!it.isSuccessful) throw IOException("Unexpected code $it")
+
+                    for ((name, value) in it.headers) {
+                        Log.i("HEADERS: ", "$name: $value")
+                    }
+
+                    val responseString = it.body!!.string()
+                    Log.i("DIRECTIONS RESPONSE", responseString)
+                }
+            }
+        })
+    }
+
+    private fun getPlaces(place: LatLng) {
+        lateinit var jsonObject: JSONArray
         val request = Request.Builder()
             .url("https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=" +
                     "${place.latitude},${place.longitude}&" +
@@ -86,8 +120,20 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
 
                     val responseString = it.body!!.string()
-                    val jsonObject = JSONObject(responseString)
+                    jsonObject = JSONObject(responseString).get("results") as JSONArray
+
                     Log.i(ContentValues.TAG, responseString)
+                    Log.i("SOMETHING???", (jsonObject[0] as JSONObject).get("name").toString())
+
+                    val places = arrayListOf<String>()
+
+                    for(i in 0 until jsonObject.length()) {
+                        places.add((jsonObject[i] as JSONObject).get("name").toString())
+                    }
+
+                    Log.i("EVEN MORE???", places.toString())
+                    makeLogs(places)
+                    getDirections(places)
                 }
             }
         })
@@ -111,10 +157,6 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
             .position(sydney)
             .title("Marker in Sydney"))
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
-
-//        val bundle = intent.getParcelableExtra<Bundle>("bundle")
-//        val fromPosition: LatLng? = bundle!!.getParcelable("from_position")
-//        val toPosition: LatLng? = bundle!!.getParcelable("to_position")
 
         // Add a start maker and move the camera
         val startPoint = fromPosition?.let { LatLng(it.latitude, fromPosition.longitude) }

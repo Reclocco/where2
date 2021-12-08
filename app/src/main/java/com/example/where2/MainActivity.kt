@@ -118,7 +118,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun reload() {
-        Log.d("TODO", "reload")
+        val currentUser = auth.currentUser
+        if(currentUser != null){
+            Log.d("USER", "user logged in")
+            val intent = Intent(this, WelcomeActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun accLogin() {
@@ -137,13 +142,14 @@ class MainActivity : AppCompatActivity() {
                 val email = emailEdit.text.toString()
                 val password = passwordEdit.text.toString()
 
-                auth.createUserWithEmailAndPassword(email, password)
+                auth.signInWithEmailAndPassword(email, password)
                     .addOnCompleteListener(this) { task ->
                         if (task.isSuccessful) {
                             // Sign in success, update UI with the signed-in user's information
-                            Log.d("SUCCESS", "createUserWithEmail:success")
+                            Log.d("SUCCESS", "siginUserWithEmail:success")
                             val user = auth.currentUser
                             updateUI(user)
+                            reload()
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.w("FAILURE", "createUserWithEmail:failure", task.exception)
