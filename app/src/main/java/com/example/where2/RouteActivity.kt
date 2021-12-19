@@ -63,8 +63,20 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
         getPlaces(centerLatLng)
     }
 
+    fun getOptimalPlaces(placeList: List<List<Any>>) {
+        var goodPlaces:     ArrayList<String>
+        var foodStop =      false
+        var monumentStop =  false
+        var museumStop =    false
+        var parkStop =      false
+
+        for(place in placeList) {
+            Log.i("COORDINATES: ", place.toString())
+        }
+    }
+
     fun makeLogs(placeList: ArrayList<String>) {
-        Log.i("WILL IT EVER WORK?? ", placeList.toString())
+        Log.i("PLACES: ", placeList.toString())
     }
 
     private fun getDirections(placeList: ArrayList<String>) {
@@ -73,8 +85,9 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                     "origin=Chicago%2C%20IL&" +
                     "destination=Los%20Angeles%2C%20CA&" +
                     "waypoints=Joplin%2C%20MO%7COklahoma%20City%2C%20OK&" +
-                    "key=AIzaSyDJwo248qnVnalWoobX8rPkxX0C-MGht_4")
-            .build()
+                    "AIzaSyDJwo248qnVnalWoobX8rPkxX0C-MGht_4")
+
+                    .build()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -96,13 +109,12 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
         })
     }
 
-    private fun getPlaces(place: LatLng) {
-        lateinit var jsonObject: JSONArray
+    private fun getBaseTripDuration(placeStart: LatLng, placeFinish: LatLng) {
         val request = Request.Builder()
-            .url("https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=" +
-                    "${place.latitude},${place.longitude}&" +
-                    "radius=1500&" +
-                    "type=restaurant&" +
+            .url("https://maps.googleapis.com/maps/api/distancematrix/json?departure_time=now&" +
+                    "origins=${placeStart.latitude}%2C${placeStart.longitude}&" +
+                    "destinations=${placeFinish.latitude}%2C${placeFinish.longitude}&" +
+                    "mode=walking&" +
                     "key=AIzaSyDJwo248qnVnalWoobX8rPkxX0C-MGht_4")
             .build()
 
@@ -120,20 +132,64 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
 
                     val responseString = it.body!!.string()
-                    jsonObject = JSONObject(responseString).get("results") as JSONArray
+                    val baseTime = (((((JSONObject(responseString).get("rows") as JSONArray)[0] as JSONObject).get("elements") as JSONArray)[0] as JSONObject).get("duration") as JSONObject).get("value")
+                    Log.i("MATRIX RESPONSE", responseString)
+                    Log.i("BASE TRIP TIME", baseTime.toString())
+                }
+            }
+        })
+    }
+
+
+    private fun getPlaces(place: LatLng) {
+        lateinit var jsonArray: JSONArray
+        val request = Request.Builder()
+            .url("https://maps.googleapis.com/maps/api/place/nearbysearch/json?" +
+                    "location=${place.latitude},${place.longitude}&" +
+                    "radius=1500&" +
+                    "type=tourist_attraction&" +
+                    "key=AIzaSyDJwo248qnVnalWoobX8rPkxX0C-MGht_4")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                e.printStackTrace()
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!it.isSuccessful) throw IOException("Unexpected code $it")
+
+                    for ((name, value) in it.headers) {
+                        Log.i("HEADERS: ", "$name: $value")
+                    }
+
+                    val responseString = it.body!!.string()
+                    jsonArray = JSONObject(responseString).get("results") as JSONArray
 
                     Log.i(ContentValues.TAG, responseString)
-                    Log.i("SOMETHING???", (jsonObject[0] as JSONObject).get("name").toString())
 
                     val places = arrayListOf<String>()
 
-                    for(i in 0 until jsonObject.length()) {
-                        places.add((jsonObject[i] as JSONObject).get("name").toString())
+                    for(i in 0 until jsonArray.length()) {
+                        places.add((jsonArray[i] as JSONObject).get("name").toString())
                     }
 
-                    Log.i("EVEN MORE???", places.toString())
+                    val placesLocation = arrayListOf<String>()
+
+                    for(i in 0 until jsonArray.length()) {
+                        placesLocation.add((((jsonArray[i] as JSONObject).get("geometry")
+                                as JSONObject).get("location") as JSONObject).get("lat").toString()
+                        )
+                        placesLocation.add((((jsonArray[i] as JSONObject).get("geometry")
+                                as JSONObject).get("location") as JSONObject).get("lng").toString()
+                        )
+                    }
+
                     makeLogs(places)
-                    getDirections(places)
+//                    getDirections(places)
+                    getOptimalPlaces(placesLocation.chunked(2))
+                    getBaseTripDuration(fromPosition, toPosition)
                 }
             }
         })
