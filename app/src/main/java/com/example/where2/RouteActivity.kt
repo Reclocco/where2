@@ -11,6 +11,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.libraries.places.api.model.Place
 import okhttp3.*
 import org.json.JSONArray
 import org.json.JSONObject
@@ -18,6 +19,15 @@ import java.io.IOException
 import okhttp3.OkHttpClient
 import kotlin.math.pow
 import kotlin.math.sqrt
+import kotlin.properties.Delegates
+
+
+class PlaceCalculated(n: String, d: Double, c1: String, c2: String) {
+    var name: String = n
+    var dist: Double = d
+    var lat: String = c1
+    var lng: String = c2
+}
 
 
 class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -54,15 +64,37 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
         Log.i("PLACES: ", placeList.toString())
     }
 
-    private fun getDirections(placeList: ArrayList<String>) {
-        val request = Request.Builder()
-            .url("https://maps.googleapis.com/maps/api/directions/json?" +
-                    "origin=Chicago%2C%20IL&" +
-                    "destination=Los%20Angeles%2C%20CA&" +
-                    "waypoints=Joplin%2C%20MO%7COklahoma%20City%2C%20OK&" +
-                    "AIzaSyDJwo248qnVnalWoobX8rPkxX0C-MGht_4")
+    private fun getDirections(placeStart: LatLng,
+                              placeFinish: LatLng,
+                              placeList: ArrayList<PlaceCalculated>) {
+        var waypoints = ""
+        for (place in placeList) {
+            waypoints += "|"
+            waypoints += place.lat
+            waypoints += "%2C"
+            waypoints += place.lng
+        }
 
-                    .build()
+        val request: Request
+        if (waypoints != "") {
+            request = Request.Builder()
+                .url("https://maps.googleapis.com/maps/api/directions/json?" +
+                        "origin=${placeStart.latitude}%2C${placeStart.longitude}&" +
+                        "destination=${placeFinish.latitude}%2C${placeFinish.longitude}&" +
+                        "waypoints=optimize:true${waypoints}&" +
+                        "mode=walking&" +
+                        "key=AIzaSyDJwo248qnVnalWoobX8rPkxX0C-MGht_4")
+                .build()
+        } else {
+            request = Request.Builder()
+                .url("https://maps.googleapis.com/maps/api/directions/json?" +
+                        "origin=${placeStart.latitude}%2C${placeStart.longitude}&" +
+                        "destination=${placeFinish.latitude}%2C${placeFinish.longitude}&" +
+                        "mode=walking&" +
+                        "key=AIzaSyDJwo248qnVnalWoobX8rPkxX0C-MGht_4")
+                .build()
+        }
+
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -72,10 +104,6 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
             override fun onResponse(call: Call, response: Response) {
                 response.use {
                     if (!it.isSuccessful) throw IOException("Unexpected code $it")
-
-                    for ((name, value) in it.headers) {
-                        Log.i("HEADERS: ", "$name: $value")
-                    }
 
                     val responseString = it.body!!.string()
                     Log.i("DIRECTIONS RESPONSE", responseString)
@@ -113,17 +141,36 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                     Log.i("MAX TRIP TIME", timeLimit.toString())
 
                     var placesToVisit = 0
-                    val absGeoDist = sqrt(((placeStart.latitude - placeFinish.latitude) % 90).pow(2) + ((placeStart.longitude - placeFinish.longitude) % 90).pow(2))
-                    var placeGeoOffsetDist = 0.0
+                    var placeGeoOffsetDist = arrayListOf<PlaceCalculated>()
+//                    var finalPlaces = arrayListOf<String>()
+                    var finalPlaces = arrayListOf<PlaceCalculated>()
+
+                    for (place in places) {
+                        Log.i("PLACES SORTED NAME SHASHUMGA", place.toString())
+
+                        placeGeoOffsetDist.add(PlaceCalculated(place[2],
+                            sqrt(((place[0].toDouble() - placeFinish.latitude) % 90).pow(2) + ((place[1].toDouble() - placeFinish.longitude) % 180).pow(2)) +
+                                sqrt(((placeStart.latitude - place[0].toDouble()) % 90).pow(2) + ((placeStart.longitude - place[1].toDouble()) % 180).pow(2)),
+                            place[0],
+                            place[1]))
+                    }
+
+                    val sortedPlaces = placeGeoOffsetDist.sortedWith(compareBy({ it.dist }))
+                    for (i in sortedPlaces.indices) {
+                        Log.i("PLACES SORTED NAME", sortedPlaces[i].name)
+                        Log.i("PLACES SORTED DIST", sortedPlaces[i].dist.toString())
+                    }
 
                     while (timeLimit - baseTime - placesToVisit*15*60 >= 0) {
-                        while (true){
-                            for (place in places) {
-                                placeGeoOffsetDist = sqrt(((place[0].toInt() - placeFinish.latitude) % 90).pow(2) + ((place[1].toInt() - placeFinish.longitude) % 180).pow(2)) +
-                                        sqrt(((placeStart.latitude - place[0].toInt()) % 90).pow(2) + ((placeStart.longitude - place[1].toInt()) % 180).pow(2))
-                            }
-                        }
+                        finalPlaces.add(sortedPlaces[placesToVisit])
+                        placesToVisit += 1
                     }
+
+                    for (i in 0 until finalPlaces.size) {
+                        Log.i("PLACES FINAL NAME", finalPlaces[i].name)
+                    }
+
+                    getDirections(placeStart, placeFinish, finalPlaces)
                 }
             }
         })
@@ -171,16 +218,20 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                             placesLocation.add((((jsonArray[i] as JSONObject).get("geometry")
                                     as JSONObject).get("location") as JSONObject).get("lat").toString()
                             )
+
                             placesLocation.add((((jsonArray[i] as JSONObject).get("geometry")
                                     as JSONObject).get("location") as JSONObject).get("lng").toString()
                             )
+
+                            placesLocation.add((jsonArray[i] as JSONObject).get("name").toString())
                         }
                     }
 
                     makeLogs(places)
 //                    getDirections(places)
 //                    getOptimalPlaces(placesLocation.chunked(2))
-                    getReasonablePlaces(fromPosition, toPosition, placesLocation.chunked(2))
+                    Log.i("PLACES SORTED BABABOEY", placesLocation.chunked(3).toString())
+                    getReasonablePlaces(fromPosition, toPosition, placesLocation.chunked(3))
                 }
             }
         })
