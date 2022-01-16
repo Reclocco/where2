@@ -1,18 +1,3 @@
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package com.example.where2
 
 import android.content.ContentValues
@@ -31,8 +16,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import okhttp3.OkHttpClient
-
-
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 
 class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -43,6 +28,7 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var fromPosition: LatLng
     private lateinit var toPosition: LatLng
     private lateinit var centerLatLng: LatLng
+    private var timeLimit: Int = 0
 
     private val client = OkHttpClient()
 
@@ -54,6 +40,7 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+        timeLimit = intent.getIntExtra("time", 1)
         bundle = intent.getParcelableExtra<Bundle>("bundle")!!
         fromPosition = bundle.getParcelable("from_position")!!
         toPosition = bundle.getParcelable("to_position")!!
@@ -61,18 +48,6 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
             (fromPosition.longitude+toPosition.longitude) / 2 % 180)
 
         getPlaces(centerLatLng)
-    }
-
-    fun getOptimalPlaces(placeList: List<List<Any>>) {
-        var goodPlaces:     ArrayList<String>
-        var foodStop =      false
-        var monumentStop =  false
-        var museumStop =    false
-        var parkStop =      false
-
-        for(place in placeList) {
-            Log.i("COORDINATES: ", place.toString())
-        }
     }
 
     fun makeLogs(placeList: ArrayList<String>) {
@@ -109,7 +84,11 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
         })
     }
 
-    private fun getBaseTripDuration(placeStart: LatLng, placeFinish: LatLng) {
+    private fun getReasonablePlaces(
+        placeStart: LatLng,
+        placeFinish: LatLng,
+        places: List<List<String>>
+    ) {
         val request = Request.Builder()
             .url("https://maps.googleapis.com/maps/api/distancematrix/json?departure_time=now&" +
                     "origins=${placeStart.latitude}%2C${placeStart.longitude}&" +
@@ -127,14 +106,24 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                 response.use {
                     if (!it.isSuccessful) throw IOException("Unexpected code $it")
 
-                    for ((name, value) in it.headers) {
-                        Log.i("HEADERS: ", "$name: $value")
-                    }
-
                     val responseString = it.body!!.string()
-                    val baseTime = (((((JSONObject(responseString).get("rows") as JSONArray)[0] as JSONObject).get("elements") as JSONArray)[0] as JSONObject).get("duration") as JSONObject).get("value")
+                    val baseTime = (((((JSONObject(responseString).get("rows") as JSONArray)[0] as JSONObject).get("elements") as JSONArray)[0] as JSONObject).get("duration") as JSONObject).get("value").toString().toInt()
                     Log.i("MATRIX RESPONSE", responseString)
                     Log.i("BASE TRIP TIME", baseTime.toString())
+                    Log.i("MAX TRIP TIME", timeLimit.toString())
+
+                    var placesToVisit = 0
+                    val absGeoDist = sqrt(((placeStart.latitude - placeFinish.latitude) % 90).pow(2) + ((placeStart.longitude - placeFinish.longitude) % 90).pow(2))
+                    var placeGeoOffsetDist = 0.0
+
+                    while (timeLimit - baseTime - placesToVisit*15*60 >= 0) {
+                        while (true){
+                            for (place in places) {
+                                placeGeoOffsetDist = sqrt(((place[0].toInt() - placeFinish.latitude) % 90).pow(2) + ((place[1].toInt() - placeFinish.longitude) % 180).pow(2)) +
+                                        sqrt(((placeStart.latitude - place[0].toInt()) % 90).pow(2) + ((placeStart.longitude - place[1].toInt()) % 180).pow(2))
+                            }
+                        }
+                    }
                 }
             }
         })
@@ -160,10 +149,6 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                 response.use {
                     if (!it.isSuccessful) throw IOException("Unexpected code $it")
 
-                    for ((name, value) in it.headers) {
-                        Log.i("HEADERS: ", "$name: $value")
-                    }
-
                     val responseString = it.body!!.string()
                     jsonArray = JSONObject(responseString).get("results") as JSONArray
 
@@ -172,38 +157,35 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                     val places = arrayListOf<String>()
 
                     for(i in 0 until jsonArray.length()) {
-                        places.add((jsonArray[i] as JSONObject).get("name").toString())
+                        if(!((jsonArray[i] as JSONObject).get("types")
+                                    as JSONArray).toString().contains("amusement_park")) {
+                            places.add((jsonArray[i] as JSONObject).get("name").toString())
+                        }
                     }
 
                     val placesLocation = arrayListOf<String>()
 
                     for(i in 0 until jsonArray.length()) {
-                        placesLocation.add((((jsonArray[i] as JSONObject).get("geometry")
-                                as JSONObject).get("location") as JSONObject).get("lat").toString()
-                        )
-                        placesLocation.add((((jsonArray[i] as JSONObject).get("geometry")
-                                as JSONObject).get("location") as JSONObject).get("lng").toString()
-                        )
+                        if(!((jsonArray[i] as JSONObject).get("types")
+                                    as JSONArray).toString().contains("amusement_park")) {
+                            placesLocation.add((((jsonArray[i] as JSONObject).get("geometry")
+                                    as JSONObject).get("location") as JSONObject).get("lat").toString()
+                            )
+                            placesLocation.add((((jsonArray[i] as JSONObject).get("geometry")
+                                    as JSONObject).get("location") as JSONObject).get("lng").toString()
+                            )
+                        }
                     }
 
                     makeLogs(places)
 //                    getDirections(places)
-                    getOptimalPlaces(placesLocation.chunked(2))
-                    getBaseTripDuration(fromPosition, toPosition)
+//                    getOptimalPlaces(placesLocation.chunked(2))
+                    getReasonablePlaces(fromPosition, toPosition, placesLocation.chunked(2))
                 }
             }
         })
     }
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
+    
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 

@@ -8,6 +8,7 @@ import android.util.Log
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.Spinner
+import androidx.core.view.get
 import com.google.android.gms.common.api.Status
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.Places
@@ -29,6 +30,9 @@ class PlanActivity : AppCompatActivity() {
 
     lateinit var startingPlace: Place
     lateinit var finishingPlace: Place
+
+    private lateinit var spinner: Spinner
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,48 +57,35 @@ class PlanActivity : AppCompatActivity() {
             }
 
             override fun onPlaceSelected(place: Place) {
-                // TODO: Get info about the selected place.
-                Log.i(TAG, "Place: ${place.name}, ${place.id}")
+                Log.i(TAG, "Place Start: ${place.name}, ${place.id}")
                 startLatLng = place.latLng
-
-//                startingPlace
             }
         })
 
-        // Initialize the AutocompleteSupportFragment.
         val autocompleteFragment2 =
             supportFragmentManager.findFragmentById(R.id.autocomplete_fragment2)
                     as AutocompleteSupportFragment
 
-        // Specify the types of place data to return.
         autocompleteFragment2.setPlaceFields(listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG))
 
-        // Set up a PlaceSelectionListener to handle the response.
         autocompleteFragment2.setOnPlaceSelectedListener(object : PlaceSelectionListener {
             override fun onError(p0: Status) {
                 null
             }
 
             override fun onPlaceSelected(place: Place) {
-                // TODO: Get info about the selected place.
-                Log.i(TAG, "Place: ${place.name}, ${place.id}")
+                Log.i(TAG, "Place Finish: ${place.name}, ${place.id}")
                 finishLatLng = place.latLng
-                Log.i(TAG, "Place: ${makeApiCall(place)}")
-
             }
         })
 
-
-        val spinner: Spinner = findViewById(R.id.spinner)
-        // Create an ArrayAdapter using the string array and a default spinner layout
+        spinner = findViewById(R.id.spinner)
         ArrayAdapter.createFromResource(
             this,
             R.array.hours_array,
             android.R.layout.simple_spinner_item
         ).also { adapter ->
-            // Specify the layout to use when the list of choices appears
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            // Apply the adapter to the spinner
             spinner.adapter = adapter
         }
 
@@ -138,6 +129,7 @@ class PlanActivity : AppCompatActivity() {
         args.putParcelable("from_position", startLatLng)
         args.putParcelable("to_position", finishLatLng)
         intent.putExtra("bundle", args)
+        intent.putExtra("time", spinner.selectedItem.toString().toInt()*3600)
         startActivity(intent)
     }
 }
