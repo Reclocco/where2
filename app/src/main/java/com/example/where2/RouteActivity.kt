@@ -12,7 +12,6 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PolylineOptions
-import com.google.android.libraries.places.api.model.Place
 import com.google.maps.android.PolyUtil
 import okhttp3.*
 import org.json.JSONArray
@@ -21,7 +20,6 @@ import java.io.IOException
 import okhttp3.OkHttpClient
 import kotlin.math.pow
 import kotlin.math.sqrt
-import kotlin.properties.Delegates
 import com.google.android.gms.maps.model.CameraPosition
 
 
@@ -113,13 +111,14 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                     Log.i("DIRECTIONS ENCODED POINTS", encodedPoints)
 
                     val decodedPoints = PolyUtil.decode(encodedPoints)
-                    drawPolyline(decodedPoints)
+                    drawDirections(decodedPoints)
+                    showPlacesPins(placeList)
                 }
             }
         })
     }
 
-    private fun drawPolyline(decodedPoints: List<LatLng>) {
+    private fun drawDirections(decodedPoints: List<LatLng>) {
         this@RouteActivity.runOnUiThread(Runnable {
             mMap.addPolyline(PolylineOptions().addAll(decodedPoints))
             mMap.animateCamera(
@@ -128,6 +127,19 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                         .zoom(13f).build()
                 )
             )
+        })
+    }
+
+    private fun showPlacesPins(nicePlaces: List<PlaceCalculated>) {
+        this@RouteActivity.runOnUiThread(Runnable {
+            for (place in nicePlaces) {
+                val nicePlace = place?.let { LatLng(place.lat.toDouble(), it.lng.toDouble()) }
+                nicePlace?.let {
+                    MarkerOptions()
+                        .position(it)
+                        .title(place.name)
+                }?.let { mMap.addMarker(it) }
+            }
         })
     }
 
@@ -246,8 +258,6 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
 
                     makeLogs(places)
-//                    getDirections(places)
-//                    getOptimalPlaces(placesLocation.chunked(2))
                     Log.i("PLACES SORTED BABABOEY", placesLocation.chunked(3).toString())
                     getReasonablePlaces(fromPosition, toPosition, placesLocation.chunked(3))
                 }
@@ -259,11 +269,11 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
         mMap = googleMap
 
         // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
-        mMap.addMarker(MarkerOptions()
-            .position(sydney)
-            .title("Marker in Sydney"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+//        val sydney = LatLng(-34.0, 151.0)
+//        mMap.addMarker(MarkerOptions()
+//            .position(sydney)
+//            .title("Marker in Sydney"))
+//        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
 
         // Add a start maker and move the camera
         val startPoint = fromPosition?.let { LatLng(it.latitude, fromPosition.longitude) }
@@ -283,14 +293,14 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
         }?.let { mMap.addMarker(it) }
         finishPoint?.let { CameraUpdateFactory.newLatLng(it) }?.let { mMap.moveCamera(it) }
 
-        // Add a finish marker and move the camera
-        val middlePoint = centerLatLng?.let { LatLng(centerLatLng.latitude, it.longitude) }
-        middlePoint?.let {
-            MarkerOptions()
-                .position(it)
-                .title("Marker middle")
-        }?.let { mMap.addMarker(it) }
-        middlePoint?.let { CameraUpdateFactory.newLatLng(it) }?.let { mMap.moveCamera(it) }
+        // Add a middle marker and move the camera
+//        val middlePoint = centerLatLng?.let { LatLng(centerLatLng.latitude, it.longitude) }
+//        middlePoint?.let {
+//            MarkerOptions()
+//                .position(it)
+//                .title("Marker middle")
+//        }?.let { mMap.addMarker(it) }
+//        middlePoint?.let { CameraUpdateFactory.newLatLng(it) }?.let { mMap.moveCamera(it) }
 
         getPlaces(centerLatLng)
     }
