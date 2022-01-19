@@ -11,7 +11,9 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.libraries.places.api.model.Place
+import com.google.maps.android.PolyUtil
 import okhttp3.*
 import org.json.JSONArray
 import org.json.JSONObject
@@ -20,6 +22,7 @@ import okhttp3.OkHttpClient
 import kotlin.math.pow
 import kotlin.math.sqrt
 import kotlin.properties.Delegates
+import com.google.android.gms.maps.model.CameraPosition
 
 
 class PlaceCalculated(n: String, d: Double, c1: String, c2: String) {
@@ -56,8 +59,6 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
         toPosition = bundle.getParcelable("to_position")!!
         centerLatLng = LatLng((fromPosition.latitude+toPosition.latitude) /2 % 90,
             (fromPosition.longitude+toPosition.longitude) / 2 % 180)
-
-        getPlaces(centerLatLng)
     }
 
     fun makeLogs(placeList: ArrayList<String>) {
@@ -107,8 +108,26 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
 
                     val responseString = it.body!!.string()
                     Log.i("DIRECTIONS RESPONSE", responseString)
+
+                    val encodedPoints = (((JSONObject(responseString).get("routes") as JSONArray)[0] as JSONObject).get("overview_polyline") as JSONObject).get("points").toString()
+                    Log.i("DIRECTIONS ENCODED POINTS", encodedPoints)
+
+                    val decodedPoints = PolyUtil.decode(encodedPoints)
+                    drawPolyline(decodedPoints)
                 }
             }
+        })
+    }
+
+    private fun drawPolyline(decodedPoints: List<LatLng>) {
+        this@RouteActivity.runOnUiThread(Runnable {
+            mMap.addPolyline(PolylineOptions().addAll(decodedPoints))
+            mMap.animateCamera(
+                CameraUpdateFactory.newCameraPosition(
+                    CameraPosition.Builder().target(fromPosition)
+                        .zoom(13f).build()
+                )
+            )
         })
     }
 
@@ -142,7 +161,6 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
 
                     var placesToVisit = 0
                     var placeGeoOffsetDist = arrayListOf<PlaceCalculated>()
-//                    var finalPlaces = arrayListOf<String>()
                     var finalPlaces = arrayListOf<PlaceCalculated>()
 
                     for (place in places) {
@@ -273,6 +291,8 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                 .title("Marker middle")
         }?.let { mMap.addMarker(it) }
         middlePoint?.let { CameraUpdateFactory.newLatLng(it) }?.let { mMap.moveCamera(it) }
+
+        getPlaces(centerLatLng)
     }
 }
 
