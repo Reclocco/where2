@@ -16,6 +16,9 @@
             android:name=".RouteActivity"
             android:exported="false" />
         <activity
+            android:name=".HistoricRouteActivity"
+            android:exported="false" />
+        <activity
             android:name=".PlanActivity"
             android:exported="false" />
         <activity

@@ -42,16 +42,13 @@ class HistoryActivity : AppCompatActivity() {
                     Log.i("POLYLINE INFO: ", polyline)
 
                     datasetUnparsed.add(JourneyInfo(polyline, places.chunked(3)))
-                    Log.i("PLACE COMPLETE INFO: ", places.toString())
                 }
+                Log.i("PLACE COMPLETE INFO: ", places.toString())
+                val adapter = HistoryAdapter(datasetUnparsed)
+                binding.spinner.adapter = adapter
+                binding.spinner.layoutManager = LinearLayoutManager(this);
+                Log.i("DATASET LEN:", adapter.itemCount.toString())
             }
-            Log.i("PLACE COMPLETE INFO: ", places.toString())
-            val dataSet = datasetUnparsed.toList().toTypedArray()
-            binding.spinner.layoutManager = LinearLayoutManager(this);
-            val adapter = HistoryAdapter(dataSet)
-            binding.spinner.adapter = adapter
-            Log.i("DATASET LEN:", adapter.itemCount.toString())
-            Log.i("DATASET LEN2:", dataSet.size.toString())
         }
     }
 }
