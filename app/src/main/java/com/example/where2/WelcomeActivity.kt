@@ -28,7 +28,7 @@ class WelcomeActivity : AppCompatActivity()  {
         setContentView(view)
 
         binding.pickFromMap.setOnClickListener{
-            openMaps()
+            openHistory()
         }
 
         binding.signOut.setOnClickListener{
@@ -42,6 +42,11 @@ class WelcomeActivity : AppCompatActivity()  {
 
     private fun openMaps() {
         val intent = Intent(this, MapsActivity::class.java)
+        startActivity(intent)
+    }
+
+    private fun openHistory() {
+        val intent = Intent(this, HistoryActivity::class.java)
         startActivity(intent)
     }
 
