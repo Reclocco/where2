@@ -28,8 +28,8 @@ class PlanActivity : AppCompatActivity() {
 
     private val client = OkHttpClient()
 
-    lateinit var startingPlace: Place
-    lateinit var finishingPlace: Place
+//    lateinit var startingPlace: Place
+//    lateinit var finishingPlace: Place
 
     private lateinit var spinner: Spinner
 

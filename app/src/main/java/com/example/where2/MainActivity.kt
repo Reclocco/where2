@@ -3,19 +3,12 @@ package com.example.where2
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.navigateUp
-import androidx.navigation.ui.setupActionBarWithNavController
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
-import com.example.where2.databinding.ActivityLoginBinding
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
@@ -24,7 +17,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import kotlin.math.log
 
 class MainActivity : AppCompatActivity() {
     private lateinit var thirdPartyLogin: Button
@@ -34,7 +26,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var emailEdit: EditText
     private lateinit var passwordEdit: EditText
 
-    private lateinit var appBarConfiguration: AppBarConfiguration
+//    private lateinit var appBarConfiguration: AppBarConfiguration
 
     private lateinit var auth: FirebaseAuth
 
@@ -65,7 +57,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // Choose authentication providers
-    val providers = arrayListOf(
+    private val providers = arrayListOf(
         AuthUI.IdpConfig.GoogleBuilder().build(),
         AuthUI.IdpConfig.TwitterBuilder().build(),
     )
@@ -95,15 +87,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    val actionCodeSettings = ActionCodeSettings.newBuilder()
-        .setAndroidPackageName( /* yourPackageName= */
-            "...",  /* installIfNotAvailable= */
-            true,  /* minimumVersion= */
-            null)
-        .setHandleCodeInApp(true) // This must be set to true
-        .setUrl("https://google.com") // This URL needs to be whitelisted
-        .build()
-
     public override fun onStart() {
         super.onStart()
         // Check if user is signed in (non-null) and update UI accordingly.
@@ -115,7 +98,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun reload() {
+    private fun reloadUI() {
         val currentUser = auth.currentUser
         if(currentUser != null){
             Log.d("USER", "user logged in")
@@ -147,7 +130,7 @@ class MainActivity : AppCompatActivity() {
                             Log.d("SUCCESS", "siginUserWithEmail:success")
                             val user = auth.currentUser
                             updateUI(user)
-                            reload()
+                            reloadUI()
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.w("FAILURE", "createUserWithEmail:failure", task.exception)
@@ -174,7 +157,6 @@ class MainActivity : AppCompatActivity() {
                             Log.w("FAILURE", "createUserWithEmail:failure", task.exception)
                             Toast.makeText(baseContext, "Authentication failed.",
                                 Toast.LENGTH_SHORT).show()
-                            updateUI(null)
                         }
                     }
             }

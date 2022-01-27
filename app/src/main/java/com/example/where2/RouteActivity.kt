@@ -22,6 +22,12 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 import com.google.android.gms.maps.model.CameraPosition
 
+import com.example.where2.JourneyInfo
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.ktx.Firebase
+
 
 class PlaceCalculated(n: String, d: Double, c1: String, c2: String) {
     var name: String = n
@@ -29,7 +35,6 @@ class PlaceCalculated(n: String, d: Double, c1: String, c2: String) {
     var lat: String = c1
     var lng: String = c2
 }
-
 
 class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -42,6 +47,7 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
     private var timeLimit: Int = 0
 
     private val client = OkHttpClient()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,10 +111,41 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                     if (!it.isSuccessful) throw IOException("Unexpected code $it")
 
                     val responseString = it.body!!.string()
-                    Log.i("DIRECTIONS RESPONSE", responseString)
+//                    Log.i("DIRECTIONS RESPONSE", responseString)
 
                     val encodedPoints = (((JSONObject(responseString).get("routes") as JSONArray)[0] as JSONObject).get("overview_polyline") as JSONObject).get("points").toString()
-                    Log.i("DIRECTIONS ENCODED POINTS", encodedPoints)
+//                    Log.i("DIRECTIONS ENCODED POINTS", encodedPoints)
+
+                    var journeyPlaces = arrayListOf<String>()
+                    journeyPlaces.add(fromPosition.latitude.toString())
+                    journeyPlaces.add(fromPosition.longitude.toString())
+                    journeyPlaces.add("Start")
+
+                    for (place in placeList) {
+                        journeyPlaces.add(place.lat)
+                        journeyPlaces.add(place.lng)
+                        journeyPlaces.add(place.name)
+                    }
+
+                    journeyPlaces.add(toPosition.latitude.toString())
+                    journeyPlaces.add(toPosition.longitude.toString())
+                    journeyPlaces.add("Finish")
+
+                    val journey = JourneyInfo(encodedPoints, journeyPlaces.chunked(3))
+                    val userID = FirebaseAuth.getInstance().currentUser?.uid
+                    if (userID != null) {
+                        Log.i("FIREBASE USER", userID)
+                    } else {
+                        Log.i("FIREBASE USER", "NONE")
+                    }
+
+                    val database: FirebaseDatabase = FirebaseDatabase.getInstance()
+                    val databaseReference = database.reference
+
+                    if (userID != null) {
+                        Log.i("ADDING JOURNEY TO FIREBASE", userID)
+                        databaseReference.child("journeys").child(userID).push().setValue(journey)
+                    }
 
                     val decodedPoints = PolyUtil.decode(encodedPoints)
                     drawDirections(decodedPoints)
@@ -165,18 +202,21 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                 response.use {
                     if (!it.isSuccessful) throw IOException("Unexpected code $it")
 
+//                    Log.i("SERVER RESPONSE", response.toString())
+//                    Log.i("SERVER RESPONSE HEADER", response.headers.toString())
+//                    Log.i("SERVER RESPONSE BODY", response.body!!.string())
                     val responseString = it.body!!.string()
                     val baseTime = (((((JSONObject(responseString).get("rows") as JSONArray)[0] as JSONObject).get("elements") as JSONArray)[0] as JSONObject).get("duration") as JSONObject).get("value").toString().toInt()
-                    Log.i("MATRIX RESPONSE", responseString)
-                    Log.i("BASE TRIP TIME", baseTime.toString())
-                    Log.i("MAX TRIP TIME", timeLimit.toString())
+//                    Log.i("MATRIX RESPONSE", responseString)
+//                    Log.i("BASE TRIP TIME", baseTime.toString())
+//                    Log.i("MAX TRIP TIME", timeLimit.toString())
 
                     var placesToVisit = 0
                     var placeGeoOffsetDist = arrayListOf<PlaceCalculated>()
                     var finalPlaces = arrayListOf<PlaceCalculated>()
 
                     for (place in places) {
-                        Log.i("PLACES SORTED NAME SHASHUMGA", place.toString())
+//                        Log.i("PLACES SORTED NAME SHASHUMGA", place.toString())
 
                         placeGeoOffsetDist.add(PlaceCalculated(place[2],
                             sqrt(((place[0].toDouble() - placeFinish.latitude) % 90).pow(2) + ((place[1].toDouble() - placeFinish.longitude) % 180).pow(2)) +
@@ -187,11 +227,11 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
 
                     val sortedPlaces = placeGeoOffsetDist.sortedWith(compareBy({ it.dist }))
                     for (i in sortedPlaces.indices) {
-                        Log.i("PLACES SORTED NAME", sortedPlaces[i].name)
-                        Log.i("PLACES SORTED DIST", sortedPlaces[i].dist.toString())
+//                        Log.i("PLACES SORTED NAME", sortedPlaces[i].name)
+//                        Log.i("PLACES SORTED DIST", sortedPlaces[i].dist.toString())
                     }
 
-                    while (timeLimit - baseTime - placesToVisit*15*60 >= 0) {
+                    while (timeLimit - baseTime - placesToVisit*15*60 >= 0 &&  placesToVisit < sortedPlaces.size) {
                         finalPlaces.add(sortedPlaces[placesToVisit])
                         placesToVisit += 1
                     }
@@ -229,7 +269,7 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                     val responseString = it.body!!.string()
                     jsonArray = JSONObject(responseString).get("results") as JSONArray
 
-                    Log.i(ContentValues.TAG, responseString)
+//                    Log.i(ContentValues.TAG, responseString)
 
                     val places = arrayListOf<String>()
 
@@ -258,7 +298,7 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
 
                     makeLogs(places)
-                    Log.i("PLACES SORTED BABABOEY", placesLocation.chunked(3).toString())
+//                    Log.i("PLACES SORTED", placesLocation.chunked(3).toString())
                     getReasonablePlaces(fromPosition, toPosition, placesLocation.chunked(3))
                 }
             }
@@ -267,13 +307,6 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
     
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-
-        // Add a marker in Sydney and move the camera
-//        val sydney = LatLng(-34.0, 151.0)
-//        mMap.addMarker(MarkerOptions()
-//            .position(sydney)
-//            .title("Marker in Sydney"))
-//        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
 
         // Add a start maker and move the camera
         val startPoint = fromPosition?.let { LatLng(it.latitude, fromPosition.longitude) }
@@ -292,15 +325,6 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                 .title("Marker finish")
         }?.let { mMap.addMarker(it) }
         finishPoint?.let { CameraUpdateFactory.newLatLng(it) }?.let { mMap.moveCamera(it) }
-
-        // Add a middle marker and move the camera
-//        val middlePoint = centerLatLng?.let { LatLng(centerLatLng.latitude, it.longitude) }
-//        middlePoint?.let {
-//            MarkerOptions()
-//                .position(it)
-//                .title("Marker middle")
-//        }?.let { mMap.addMarker(it) }
-//        middlePoint?.let { CameraUpdateFactory.newLatLng(it) }?.let { mMap.moveCamera(it) }
 
         getPlaces(centerLatLng)
     }
