@@ -1,8 +1,17 @@
 package com.example.where2
 
+import android.Manifest
+import android.app.AlertDialog
+import android.app.Dialog
+import android.content.DialogInterface
+import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.DialogFragment
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -284,6 +293,20 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         })
     }
+
+    private fun enableMyLocation() {
+        if (!::mMap.isInitialized) return
+        // [START maps_check_location_permission]
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED) {
+            mMap.isMyLocationEnabled = true
+        } else {
+            // Permission to access the location is missing. Show rationale and request permission
+            requestPermission(this, LOCATION_PERMISSION_REQUEST_CODE,
+                Manifest.permission.ACCESS_FINE_LOCATION, true
+            )
+        }
+    }
     
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
@@ -307,6 +330,77 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
         finishPoint?.let { CameraUpdateFactory.newLatLng(it) }?.let { mMap.moveCamera(it) }
 
         getPlaces(centerLatLng)
+        enableMyLocation()
+    }
+
+    fun requestPermission(
+        activity: AppCompatActivity, requestId: Int,
+        permission: String, finishActivity: Boolean
+    ) {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)) {
+            RationaleDialog.newInstance(requestId, finishActivity)
+                .show(activity.supportFragmentManager, "dialog")
+        } else {
+            ActivityCompat.requestPermissions(
+                activity,
+                arrayOf(permission),
+                requestId
+            )
+        }
+    }
+
+    class RationaleDialog : DialogFragment() {
+        private var finishActivity = false
+        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+            val requestCode =
+                arguments?.getInt(ARGUMENT_PERMISSION_REQUEST_CODE) ?: 0
+            finishActivity =
+                arguments?.getBoolean(ARGUMENT_FINISH_ACTIVITY) ?: false
+            return AlertDialog.Builder(activity)
+                .setMessage(R.string.permission_rationale_location)
+                .setPositiveButton(android.R.string.ok) { dialog, which -> // After click on Ok, request the permission.
+                    ActivityCompat.requestPermissions(
+                        requireActivity(),
+                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                        requestCode
+                    )
+                    // Do not finish the Activity while requesting permission.
+                    finishActivity = false
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .create()
+        }
+
+        override fun onDismiss(dialog: DialogInterface) {
+            super.onDismiss(dialog)
+            if (finishActivity) {
+                Toast.makeText(
+                    activity,
+                    R.string.permission_required_toast,
+                    Toast.LENGTH_SHORT
+                ).show()
+                activity?.finish()
+            }
+        }
+
+        companion object {
+            private const val ARGUMENT_PERMISSION_REQUEST_CODE = "requestCode"
+            private const val ARGUMENT_FINISH_ACTIVITY = "finish"
+
+            fun newInstance(requestCode: Int, finishActivity: Boolean): RationaleDialog {
+                val arguments = Bundle().apply {
+                    putInt(ARGUMENT_PERMISSION_REQUEST_CODE, requestCode)
+                    putBoolean(ARGUMENT_FINISH_ACTIVITY, finishActivity)
+                }
+                return RationaleDialog().apply {
+                    this.arguments = arguments
+                }
+            }
+        }
+    }
+
+    companion object {
+        private const val LOCATION_PERMISSION_REQUEST_CODE = 1
     }
 }
 
