@@ -34,7 +34,6 @@ class HistoryActivity : AppCompatActivity() {
                     journey.child("places").children.forEach { place ->
                         place.children.forEach { parameter ->
                             places.add(parameter.value.toString())
-//                            Log.i("PLACE INFO: ", parameter.toString())
                         }
                     }
 

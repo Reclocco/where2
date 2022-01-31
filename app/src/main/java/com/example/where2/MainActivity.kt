@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.ui.AppBarConfiguration
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -12,9 +11,7 @@ import android.widget.Toast
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
-import com.google.firebase.auth.ActionCodeSettings
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
@@ -25,8 +22,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var emailEdit: EditText
     private lateinit var passwordEdit: EditText
-
-//    private lateinit var appBarConfiguration: AppBarConfiguration
 
     private lateinit var auth: FirebaseAuth
 
@@ -70,29 +65,22 @@ class MainActivity : AppCompatActivity() {
         .build()
 
     private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult) {
-        Log.d("BIP BOP", "signin start")
-
         val response = result.idpResponse
         if (result.resultCode == RESULT_OK) {
-            // Successfully signed in
             val user = FirebaseAuth.getInstance().currentUser
-            Log.d("BIP BOP", "AUTH SUCCESSFUL")
             Toast.makeText(this, "LOGIN SUCCESSFUL", Toast.LENGTH_SHORT).show()
 
             val intent = Intent(this, WelcomeActivity::class.java)
             startActivity(intent)
         } else {
-            Log.d("DEAD", "AUTH SUCCESSFUL")
             Toast.makeText(this, "LOGIN UNSUCCESSFUL", Toast.LENGTH_SHORT).show()
         }
     }
 
     public override fun onStart() {
         super.onStart()
-        // Check if user is signed in (non-null) and update UI accordingly.
         val currentUser = auth.currentUser
         if(currentUser != null){
-            Log.d("USER", "user logged in")
             val intent = Intent(this, WelcomeActivity::class.java)
             startActivity(intent)
         }
@@ -106,12 +94,6 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
     }
-
-    private fun accLogin() {
-        signInLauncher.launch(signInIntent)
-    }
-
-  
 
     private val listener = View.OnClickListener { view ->
         when (view.id){
@@ -128,15 +110,12 @@ class MainActivity : AppCompatActivity() {
                         if (task.isSuccessful) {
                             // Sign in success, update UI with the signed-in user's information
                             Log.d("SUCCESS", "siginUserWithEmail:success")
-                            val user = auth.currentUser
-                            updateUI(user)
                             reloadUI()
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.w("FAILURE", "createUserWithEmail:failure", task.exception)
                             Toast.makeText(baseContext, "Authentication failed.",
                                 Toast.LENGTH_SHORT).show()
-                            updateUI(null)
                         }
                     }
             }
@@ -150,8 +129,7 @@ class MainActivity : AppCompatActivity() {
                         if (task.isSuccessful) {
                             // Sign in success, update UI with the signed-in user's information
                             Log.d("SUCCESS", "createUserWithEmail:success")
-                            val user = auth.currentUser
-                            updateUI(user)
+
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.w("FAILURE", "createUserWithEmail:failure", task.exception)
@@ -160,14 +138,6 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
             }
-        }
-    }
-
-    private fun updateUI(user: FirebaseUser?) {
-        if(user == null){
-            return
-        } else {
-            return
         }
     }
 }

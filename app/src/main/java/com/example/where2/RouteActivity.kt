@@ -1,6 +1,5 @@
 package com.example.where2
 
-import android.content.ContentValues
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -111,10 +110,8 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                     if (!it.isSuccessful) throw IOException("Unexpected code $it")
 
                     val responseString = it.body!!.string()
-//                    Log.i("DIRECTIONS RESPONSE", responseString)
 
                     val encodedPoints = (((JSONObject(responseString).get("routes") as JSONArray)[0] as JSONObject).get("overview_polyline") as JSONObject).get("points").toString()
-//                    Log.i("DIRECTIONS ENCODED POINTS", encodedPoints)
 
                     var journeyPlaces = arrayListOf<String>()
                     journeyPlaces.add(fromPosition.latitude.toString())
@@ -135,17 +132,15 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                     val userID = FirebaseAuth.getInstance().currentUser?.uid
                     if (userID != null) {
                         Log.i("FIREBASE USER", userID)
-                    } else {
-                        Log.i("FIREBASE USER", "NONE")
-                    }
+                        val database: FirebaseDatabase = FirebaseDatabase.getInstance()
+                        val databaseReference = database.reference
 
-                    val database: FirebaseDatabase = FirebaseDatabase.getInstance()
-                    val databaseReference = database.reference
-
-                    if (userID != null) {
                         Log.i("ADDING JOURNEY TO FIREBASE", userID)
                         databaseReference.child("journeys").child(userID).push().setValue(journey)
                     }
+                    else { Log.i("FIREBASE USER", "NONE") }
+
+
 
                     val decodedPoints = PolyUtil.decode(encodedPoints)
                     drawDirections(decodedPoints)
@@ -202,22 +197,14 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                 response.use {
                     if (!it.isSuccessful) throw IOException("Unexpected code $it")
 
-//                    Log.i("SERVER RESPONSE", response.toString())
-//                    Log.i("SERVER RESPONSE HEADER", response.headers.toString())
-//                    Log.i("SERVER RESPONSE BODY", response.body!!.string())
                     val responseString = it.body!!.string()
                     val baseTime = (((((JSONObject(responseString).get("rows") as JSONArray)[0] as JSONObject).get("elements") as JSONArray)[0] as JSONObject).get("duration") as JSONObject).get("value").toString().toInt()
-//                    Log.i("MATRIX RESPONSE", responseString)
-//                    Log.i("BASE TRIP TIME", baseTime.toString())
-//                    Log.i("MAX TRIP TIME", timeLimit.toString())
 
                     var placesToVisit = 0
                     var placeGeoOffsetDist = arrayListOf<PlaceCalculated>()
                     var finalPlaces = arrayListOf<PlaceCalculated>()
 
                     for (place in places) {
-//                        Log.i("PLACES SORTED NAME SHASHUMGA", place.toString())
-
                         placeGeoOffsetDist.add(PlaceCalculated(place[2],
                             sqrt(((place[0].toDouble() - placeFinish.latitude) % 90).pow(2) + ((place[1].toDouble() - placeFinish.longitude) % 180).pow(2)) +
                                 sqrt(((placeStart.latitude - place[0].toDouble()) % 90).pow(2) + ((placeStart.longitude - place[1].toDouble()) % 180).pow(2)),
@@ -226,10 +213,6 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
 
                     val sortedPlaces = placeGeoOffsetDist.sortedWith(compareBy({ it.dist }))
-                    for (i in sortedPlaces.indices) {
-//                        Log.i("PLACES SORTED NAME", sortedPlaces[i].name)
-//                        Log.i("PLACES SORTED DIST", sortedPlaces[i].dist.toString())
-                    }
 
                     while (timeLimit - baseTime - placesToVisit*15*60 >= 0 &&  placesToVisit < sortedPlaces.size) {
                         finalPlaces.add(sortedPlaces[placesToVisit])
@@ -269,8 +252,6 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                     val responseString = it.body!!.string()
                     jsonArray = JSONObject(responseString).get("results") as JSONArray
 
-//                    Log.i(ContentValues.TAG, responseString)
-
                     val places = arrayListOf<String>()
 
                     for(i in 0 until jsonArray.length()) {
@@ -298,7 +279,6 @@ class RouteActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
 
                     makeLogs(places)
-//                    Log.i("PLACES SORTED", placesLocation.chunked(3).toString())
                     getReasonablePlaces(fromPosition, toPosition, placesLocation.chunked(3))
                 }
             }
